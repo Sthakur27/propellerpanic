@@ -1,6 +1,6 @@
 import {
-  GRAV, FALL_TERMINAL, SLOW_FALL, MAX_VX, ACCEL, DRAG, BOUNCE, BOOST, POWERUP_INTERVAL, GAME_SPEED,
-  H_BASE, CLIMB_H, CLIMB_CAM_OFFSET, R,
+  GRAV, FALL_TERMINAL, SLOW_FALL, FAST_FALL, MAX_VX, ACCEL, DRAG, BOUNCE, BOOST, POWERUP_INTERVAL,
+  GAME_SPEED, H_BASE, CLIMB_H, CLIMB_CAM_OFFSET, R,
 } from './config.js';
 import { S, keys } from './state.js';
 import { clamp, rand } from './util.js';
@@ -169,9 +169,9 @@ export function tick(dt){
   S.powerupTimer += dt;
   if (S.powerupTimer >= POWERUP_INTERVAL){ S.powerupTimer = 0; spawnPowerup(); }
 
-  // player physics — gravity, capped to a glide (slower while holding the slow-fall key)
-  S.vy -= GRAV * dt;
-  const termFall = keys.slow ? SLOW_FALL : FALL_TERMINAL;
+  // player physics — gravity (doubled while fast-falling), capped to a glide
+  S.vy -= GRAV * (keys.fast ? 2 : 1) * dt;
+  const termFall = keys.slow ? SLOW_FALL : (keys.fast ? FAST_FALL : FALL_TERMINAL);
   if (S.vy < termFall) S.vy = termFall;
   S.prevY = player.position.y;
   player.position.y += S.vy * dt;

@@ -5,19 +5,21 @@
 // The context is created lazily on the first user gesture (initAudio).
 
 let actx = null, master = null, musicGain = null, sfxGain = null;
-let muted = false;
+let musicOn = true, sfxOn = true;
+const MUSIC_VOL = 0.13, SFX_VOL = 0.9;
 
 export function initAudio(){
   if (actx) { if (actx.state === 'suspended') actx.resume(); return; }
   try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return; }
-  master = actx.createGain();    master.gain.value = muted ? 0 : 1;  master.connect(actx.destination);
-  musicGain = actx.createGain(); musicGain.gain.value = 0.13;        musicGain.connect(master);
-  sfxGain = actx.createGain();   sfxGain.gain.value = 0.9;           sfxGain.connect(master);
+  master = actx.createGain();    master.gain.value = 1;                      master.connect(actx.destination);
+  musicGain = actx.createGain(); musicGain.gain.value = musicOn ? MUSIC_VOL : 0; musicGain.connect(master);
+  sfxGain = actx.createGain();   sfxGain.gain.value = sfxOn ? SFX_VOL : 0;       sfxGain.connect(master);
   startMusic();
 }
 
-export function setMuted(m){ muted = m; if (master) master.gain.value = m ? 0 : 1; }
-export function toggleMute(){ setMuted(!muted); return muted; }
+// Independent toggles — each returns its new ON state (true = audible).
+export function toggleMusic(){ musicOn = !musicOn; if (musicGain) musicGain.gain.value = musicOn ? MUSIC_VOL : 0; return musicOn; }
+export function toggleSfx(){   sfxOn   = !sfxOn;   if (sfxGain)   sfxGain.gain.value   = sfxOn   ? SFX_VOL   : 0; return sfxOn; }
 
 // ---------- one-shot sound effects ----------
 export function sfx(type){

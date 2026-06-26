@@ -92,7 +92,7 @@ export function resolveSpawn(speed, opts){
   if (!type){
     if (Math.random() < S.homingChance) type = 'HOMING';
     else if (S.mode === 'climb') type = 'U';                 // climb: vertical (rising) Bills only
-    else { const r = Math.random(); type = r < 0.4 ? 'L' : r < 0.8 ? 'R' : 'U'; }
+    else { const r = Math.random(); type = r < 0.25 ? 'L' : r < 0.5 ? 'R' : 'U'; }  // 50% horizontal / 50% vertical
   }
   const cy = camera.position.y;                                // view follows the camera
   const yLo = opts.yLo !== undefined ? opts.yLo : cy - S.H + 2.5;

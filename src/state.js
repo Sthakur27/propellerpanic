@@ -19,4 +19,4 @@ export const S = {
 };
 
 // Held input keys, mutated in place by input handlers.
-export const keys = { left: false, right: false, slow: false };
+export const keys = { left: false, right: false, slow: false, fast: false };

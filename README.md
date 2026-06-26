@@ -16,11 +16,13 @@ Two modes:
 
 | Action | Keyboard | Touch |
 | --- | --- | --- |
-| Steer left / right | `←` `→` (or `A` `D`) | hold the left / right half of the screen |
-| Fall slower | hold `Space` / `↑` / `W` | — |
+| Steer left / right | `A` `D` (or `←` `→`) | hold the left / right half of the screen |
+| Fall slower | hold `W` / `↑` / `Space` | — |
+| Fall faster | hold `S` / `↓` | — |
 | Use boost charge | `E` | tap the ⚡ button |
 | Pause / resume | `P` / `Esc` | tap the ⏸ button |
-| Mute / unmute | tap 🔊 | tap 🔊 |
+| Music on / off | tap 🎵 | tap 🎵 |
+| SFX on / off | tap 🔊 | tap 🔊 |
 | Start / retry | `Space` (or `R` on game over) | tap |
 
 You glide down automatically — your only way up is **bouncing off a Bill's head**. Hold the

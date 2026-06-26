@@ -1,7 +1,7 @@
 import { S, keys } from './state.js';
-import { initAudio, sfx, toggleMute } from './audio.js';
+import { initAudio, sfx, toggleMusic, toggleSfx } from './audio.js';
 import { startGame, useBoost, pause, resume, toMenu, press } from './game.js';
-import { boostBtn, pauseBtn, muteBtn, btnSurvive, btnClimb, resumeBtn, restartBtn, menuBtn, retryBtn, switchBtn } from './ui.js';
+import { boostBtn, pauseBtn, musicBtn, sfxBtn, btnSurvive, btnClimb, resumeBtn, restartBtn, menuBtn, retryBtn, switchBtn } from './ui.js';
 
 // ----- keyboard -----
 addEventListener('keydown', e => {
@@ -13,6 +13,7 @@ addEventListener('keydown', e => {
     else if (S.phase === 'paused')  resume();
     else                            press();                       // start / restart
   }
+  if (e.code === 'ArrowDown' || e.code === 'KeyS'){ e.preventDefault(); if (S.phase === 'playing') keys.fast = true; }   // hold to fall faster
   if (e.code === 'KeyE' && S.phase === 'playing'){ initAudio(); useBoost(); }   // spend a charge for a boost
   if (e.code === 'KeyP' || e.code === 'Escape'){
     e.preventDefault();
@@ -25,6 +26,7 @@ addEventListener('keyup', e => {
   if (e.code === 'ArrowLeft'  || e.code === 'KeyA') keys.left = false;
   if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.slow = false;
+  if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.fast = false;
 });
 
 // ----- touch: hold left / right half of the screen to steer -----
@@ -45,10 +47,13 @@ function boostTap(e){ e.preventDefault(); e.stopPropagation(); initAudio(); useB
 boostBtn.addEventListener('touchstart', boostTap, { passive:false });
 boostBtn.addEventListener('mousedown', boostTap);
 
-// mute toggle (works even before audio has started — flag is applied on init)
-function muteTap(e){ e.preventDefault(); e.stopPropagation(); muteBtn.textContent = toggleMute() ? '🔇' : '🔊'; }
-muteBtn.addEventListener('mousedown', muteTap);
-muteBtn.addEventListener('touchstart', muteTap, { passive:false });
+// independent music / SFX toggles (work before audio starts — flags applied on init)
+function musicTap(e){ e.preventDefault(); e.stopPropagation(); musicBtn.classList.toggle('off', !toggleMusic()); }
+musicBtn.addEventListener('mousedown', musicTap);
+musicBtn.addEventListener('touchstart', musicTap, { passive:false });
+function sfxTap(e){ e.preventDefault(); e.stopPropagation(); const on = toggleSfx(); sfxBtn.textContent = on ? '🔊' : '🔇'; sfxBtn.classList.toggle('off', !on); }
+sfxBtn.addEventListener('mousedown', sfxTap);
+sfxBtn.addEventListener('touchstart', sfxTap, { passive:false });
 
 function pickMode(m){ return e => { e.preventDefault(); e.stopPropagation(); initAudio(); sfx('select'); startGame(m); }; }
 btnSurvive.addEventListener('mousedown',  pickMode('survive'));

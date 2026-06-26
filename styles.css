@@ -66,16 +66,19 @@ body {
 .mName { font-size:19px; font-weight:900; }
 .mDesc { font-size:12px; opacity:.85; line-height:1.35; }
 
-#muteBtn, #pauseBtn {
+#musicBtn, #sfxBtn, #pauseBtn {
   position:absolute; top:16px; z-index:4;
   align-items:center; justify-content:center;
   width:44px; height:44px; border:none; border-radius:50%; padding:0;
   font-size:17px; color:#fff; cursor:pointer; -webkit-tap-highlight-color:transparent;
   background:rgba(40,55,80,.45); box-shadow:0 3px 0 rgba(0,0,0,.25);
+  transition:opacity .15s;
 }
-#muteBtn  { left:14px; display:flex; }   /* always visible */
-#pauseBtn { left:66px; display:none; }   /* shown during play */
-#muteBtn:active, #pauseBtn:active { transform:translateY(2px); }
+#musicBtn { left:14px;  display:flex; }   /* always visible */
+#sfxBtn   { left:66px;  display:flex; }   /* always visible */
+#pauseBtn { left:118px; display:none; }   /* shown during play */
+#musicBtn.off, #sfxBtn.off { opacity:.4; }   /* dimmed when toggled off */
+#musicBtn:active, #sfxBtn:active, #pauseBtn:active { transform:translateY(2px); }
 
 .ovBtns { display:flex; gap:12px; margin-top:20px; justify-content:center; flex-wrap:wrap; }
 .ovBtn {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { H_BASE, H_MAX } from './config.js';
+import { H_MAX } from './config.js';
 import { S } from './state.js';
 
 export const gameEl = document.getElementById('game');
@@ -22,10 +22,5 @@ export function resize(){
 addEventListener('resize', resize);
 resize();
 
-// Survive starts zoomed out (H_BASE) and eases further out at score 5 / 15 / 25.
-export function targetZoom(){
-  if (S.score >= 25) return H_MAX;   // 24
-  if (S.score >= 15) return 22;
-  if (S.score >= 5)  return 20;
-  return H_BASE;                     // 18
-}
+// Fixed max zoom-out (no progression).
+export function targetZoom(){ return H_MAX; }
