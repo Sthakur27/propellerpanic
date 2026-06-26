@@ -1,0 +1,18 @@
+// Cached DOM references (the module script runs after the markup, so these resolve).
+export const scoreEl    = document.getElementById('score');
+export const startEl    = document.getElementById('start');
+export const overEl     = document.getElementById('over');
+export const pauseEl    = document.getElementById('pause');
+export const chargesEl  = document.getElementById('charges');
+export const chargeNum  = document.getElementById('chargeNum');
+export const boostBtn   = document.getElementById('boostBtn');
+export const boostNum   = document.getElementById('boostNum');
+export const pauseBtn   = document.getElementById('pauseBtn');
+export const finalScore = document.getElementById('finalScore');
+export const bestScore  = document.getElementById('bestScore');
+export const btnSurvive = document.getElementById('btnSurvive');
+export const btnClimb   = document.getElementById('btnClimb');
+export const resumeBtn  = document.getElementById('resumeBtn');
+export const menuBtn    = document.getElementById('menuBtn');
+export const retryBtn   = document.getElementById('retryBtn');
+export const switchBtn  = document.getElementById('switchBtn');
