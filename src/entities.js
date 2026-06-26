@@ -1,8 +1,9 @@
 import * as THREE from 'three';
-import { R, WARN_DELAY } from './config.js';
+import { R, WARN_DELAY, BOUNCE } from './config.js';
 import { S } from './state.js';
 import { clamp, rand, roundedRect, shapeMesh, circle } from './util.js';
 import { scene, camera } from './scene.js';
+import { sfx } from './audio.js';
 
 // ---------- background clouds ----------
 export const clouds = [];
@@ -90,6 +91,7 @@ export function resolveSpawn(speed, opts){
   let type = opts.type;
   if (!type){
     if (Math.random() < S.homingChance) type = 'HOMING';
+    else if (S.mode === 'climb') type = 'U';                 // climb: vertical (rising) Bills only
     else { const r = Math.random(); type = r < 0.4 ? 'L' : r < 0.8 ? 'R' : 'U'; }
   }
   const cy = camera.position.y;                                // view follows the camera
@@ -210,9 +212,15 @@ export function collidePlatforms(){
       if (px > sx0 && px < sx1 && py > sy0 && py < sy1){
         const pushL = px - sx0, pushR = sx1 - px, pushD = py - sy0, pushU = sy1 - py;
         if (Math.min(pushL, pushR) < Math.min(pushD, pushU)){
-          player.position.x += (pushL < pushR ? -pushL : pushR); S.vx = 0;
+          player.position.x += (pushL < pushR ? -pushL : pushR); S.vx = 0;   // blocked sideways
         } else if (pushU < pushD){
-          player.position.y += pushU; if (S.vy < 0) S.vy = 0;       // landed on top
+          player.position.y += pushU;                              // landed on top → bounce
+          if (S.vy < 0){
+            const lowThird = player.position.y < camera.position.y - S.H / 3;
+            S.vy = BOUNCE * (lowThird ? 1.25 : 1);
+            burst(player.position.x, player.position.y - R, 0xffe08a, 12);
+            sfx('bounce');
+          }
         } else {
           player.position.y -= pushD; if (S.vy > 0) S.vy = 0;       // bonk from below
         }
