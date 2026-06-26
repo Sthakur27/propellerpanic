@@ -1,9 +1,10 @@
 // Tunable gameplay constants.
-export const H_BASE = 14, H_MAX = 24;     // camera half-height (zoom); grows in Survive
-export const CLIMB_H = 18;                 // Climb is more zoomed out than Survive's base
+export const H_BASE = 18, H_MAX = 24;     // camera half-height (zoom); Survive starts zoomed out, grows
+export const CLIMB_H = 18;                 // Climb zoom (fixed)
 export const CLIMB_CAM_OFFSET = 0.10;      // camera sits this fraction of H above the player
                                            // (small → player rides high in view → more room below)
 export const GRAV = 24, FALL_TERMINAL = -4.4;
+export const SLOW_FALL = -1.8;             // capped descent speed while holding the slow-fall key
 export const MAX_VX = 13, ACCEL = 70, DRAG = 42, BOUNCE = 18, BOOST = 29;
 export const POWERUP_INTERVAL = 9;        // seconds between power-up spawns
 export const GAME_SPEED = 0.65;           // global pace: <1 slows everything uniformly

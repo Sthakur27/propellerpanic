@@ -9,10 +9,11 @@ addEventListener('keydown', e => {
   if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW'){
     e.preventDefault();
-    if (S.phase === 'playing')      { initAudio(); useBoost(); }   // spend a charge for a boost
+    if (S.phase === 'playing')      keys.slow = true;              // hold to fall slower
     else if (S.phase === 'paused')  resume();
     else                            press();                       // start / restart
   }
+  if (e.code === 'KeyE' && S.phase === 'playing'){ initAudio(); useBoost(); }   // spend a charge for a boost
   if (e.code === 'KeyP' || e.code === 'Escape'){
     e.preventDefault();
     if (S.phase === 'playing') pause();
@@ -23,6 +24,7 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => {
   if (e.code === 'ArrowLeft'  || e.code === 'KeyA') keys.left = false;
   if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.slow = false;
 });
 
 // ----- touch: hold left / right half of the screen to steer -----

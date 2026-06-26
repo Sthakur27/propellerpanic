@@ -22,10 +22,10 @@ export function resize(){
 addEventListener('resize', resize);
 resize();
 
-// Stepped, exponentially-decaying zoom-out (Survive): 3 steps at score 5 / 15 / 25, then max.
+// Survive starts zoomed out (H_BASE) and eases further out at score 5 / 15 / 25.
 export function targetZoom(){
   if (S.score >= 25) return H_MAX;   // 24
   if (S.score >= 15) return 22;
-  if (S.score >= 5)  return 19;
-  return H_BASE;                     // 14
+  if (S.score >= 5)  return 20;
+  return H_BASE;                     // 18
 }

@@ -1,5 +1,5 @@
 import {
-  GRAV, FALL_TERMINAL, MAX_VX, ACCEL, DRAG, BOUNCE, BOOST, POWERUP_INTERVAL, GAME_SPEED,
+  GRAV, FALL_TERMINAL, SLOW_FALL, MAX_VX, ACCEL, DRAG, BOUNCE, BOOST, POWERUP_INTERVAL, GAME_SPEED,
   H_BASE, CLIMB_H, CLIMB_CAM_OFFSET, R,
 } from './config.js';
 import { S, keys } from './state.js';
@@ -168,9 +168,10 @@ export function tick(dt){
   S.powerupTimer += dt;
   if (S.powerupTimer >= POWERUP_INTERVAL){ S.powerupTimer = 0; spawnPowerup(); }
 
-  // player physics — gravity, capped to a slow glide on the way down
+  // player physics — gravity, capped to a glide (slower while holding the slow-fall key)
   S.vy -= GRAV * dt;
-  if (S.vy < FALL_TERMINAL) S.vy = FALL_TERMINAL;
+  const termFall = keys.slow ? SLOW_FALL : FALL_TERMINAL;
+  if (S.vy < termFall) S.vy = termFall;
   S.prevY = player.position.y;
   player.position.y += S.vy * dt;
 
@@ -194,8 +195,8 @@ export function tick(dt){
   // survive has a ceiling; climb is open upward
   if (S.mode === 'survive' && player.position.y > S.H-R){ player.position.y = S.H-R; if (S.vy>0) S.vy = 0; }
 
-  // propeller always spins; faster while shooting upward
-  prop.rotation.z -= (13 + Math.max(0, S.vy) * 1.1) * dt;
+  // propeller always spins; faster while shooting upward or braking a fall
+  prop.rotation.z -= (13 + Math.max(0, S.vy) * 1.1 + (keys.slow ? 16 : 0)) * dt;
 
   if (S.mode === 'survive'){
     // rescue: if you sink past the screen midpoint, drop a Bill into the bottom band

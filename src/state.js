@@ -18,5 +18,5 @@ export const S = {
   last: 0,                 // loop timestamp (ms)
 };
 
-// Held steering keys, mutated in place by input handlers.
-export const keys = { left: false, right: false };
+// Held input keys, mutated in place by input handlers.
+export const keys = { left: false, right: false, slow: false };
