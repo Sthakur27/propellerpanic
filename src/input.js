@@ -1,7 +1,7 @@
 import { S, keys } from './state.js';
 import { initAudio, sfx, toggleMute } from './audio.js';
 import { startGame, useBoost, pause, resume, toMenu, press } from './game.js';
-import { boostBtn, pauseBtn, muteBtn, btnSurvive, btnClimb, resumeBtn, menuBtn, retryBtn, switchBtn } from './ui.js';
+import { boostBtn, pauseBtn, muteBtn, btnSurvive, btnClimb, resumeBtn, restartBtn, menuBtn, retryBtn, switchBtn } from './ui.js';
 
 // ----- keyboard -----
 addEventListener('keydown', e => {
@@ -63,6 +63,7 @@ function tap(el, fn){
 }
 tap(pauseBtn, pause);
 tap(resumeBtn, resume);
+tap(restartBtn, () => startGame(S.lastMode));
 tap(menuBtn,   toMenu);
 tap(retryBtn,  () => startGame(S.lastMode));
 tap(switchBtn, toMenu);

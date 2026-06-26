@@ -58,6 +58,7 @@ export function startGame(m){
   chargesEl.style.display = 'block';
   boostBtn.style.display = 'flex';
   pauseBtn.style.display = 'flex';
+  resumeMusic();                   // in case we're restarting from a paused state
   S.phase = 'playing';
   // give the player something to bounce on right away
   scheduleSpawn(6.5, {}, 0.6);

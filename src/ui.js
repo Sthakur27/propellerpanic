@@ -14,6 +14,7 @@ export const bestScore  = document.getElementById('bestScore');
 export const btnSurvive = document.getElementById('btnSurvive');
 export const btnClimb   = document.getElementById('btnClimb');
 export const resumeBtn  = document.getElementById('resumeBtn');
+export const restartBtn = document.getElementById('restartBtn');
 export const menuBtn    = document.getElementById('menuBtn');
 export const retryBtn   = document.getElementById('retryBtn');
 export const switchBtn  = document.getElementById('switchBtn');
