@@ -1,10 +1,11 @@
 import {
-  GRAV, FALL_TERMINAL, MAX_VX, ACCEL, DRAG, BOUNCE, BOOST, POWERUP_INTERVAL, GAME_SPEED, H_BASE, R,
+  GRAV, FALL_TERMINAL, MAX_VX, ACCEL, DRAG, BOUNCE, BOOST, POWERUP_INTERVAL, GAME_SPEED,
+  H_BASE, CLIMB_H, CLIMB_CAM_OFFSET, R,
 } from './config.js';
 import { S, keys } from './state.js';
 import { clamp, rand } from './util.js';
 import { scene, camera, updateCamera, targetZoom } from './scene.js';
-import { initAudio, sfx } from './audio.js';
+import { initAudio, sfx, pauseMusic, resumeMusic } from './audio.js';
 import {
   player, prop, particles,
   bullets, warnings, realizeSpawn, scheduleSpawn, spawnRescue, clearBullets, clearWarnings,
@@ -36,14 +37,14 @@ export function startGame(m){
   clearBullets(); clearWarnings(); clearPowerups(); clearPlatforms();
   particles.forEach(p => scene.remove(p.m)); particles.length = 0;
   S.score = 0; S.homingChance = 0;
-  S.H = H_BASE; updateCamera();
+  S.H = (S.mode === 'climb') ? CLIMB_H : H_BASE; updateCamera();
   player.rotation.z = 0;
   if (S.mode === 'survive'){
     camera.position.y = 0;
     player.position.set(0, S.H * 0.72, 1);
   } else {                                   // climb
     player.position.set(0, 0, 1);
-    camera.position.y = player.position.y + S.H * 0.24;
+    camera.position.y = player.position.y + S.H * CLIMB_CAM_OFFSET;
     S.startY = player.position.y; S.maxClimbY = player.position.y;
     S.nextPlatformY = player.position.y + 11;
   }
@@ -93,6 +94,7 @@ export function pause(){
   S.phase = 'paused';
   pauseEl.classList.remove('hidden');
   pauseBtn.style.display = 'none';
+  pauseMusic();
 }
 export function resume(){
   if (S.phase !== 'paused') return;
@@ -100,6 +102,7 @@ export function resume(){
   pauseBtn.style.display = 'flex';
   S.last = performance.now();      // avoid a one-frame dt spike after a long pause
   S.phase = 'playing';
+  resumeMusic();
 }
 export function toMenu(){
   clearBullets(); clearWarnings(); clearPowerups(); clearPlatforms();
@@ -144,7 +147,7 @@ export function tick(dt){
 
   // Climb: follow the player's peak upward (never down) + lay platforms ahead, cull below
   if (S.mode === 'climb'){
-    const camTarget = player.position.y + S.H * 0.24;
+    const camTarget = player.position.y + S.H * CLIMB_CAM_OFFSET;
     if (camTarget > camera.position.y) camera.position.y = camTarget;
     while (S.nextPlatformY < camera.position.y + S.H + 6){ makePlatform(S.nextPlatformY); S.nextPlatformY += rand(8, 13); }
     for (let i = platforms.length-1; i >= 0; i--){

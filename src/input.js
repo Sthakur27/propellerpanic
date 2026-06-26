@@ -1,7 +1,7 @@
 import { S, keys } from './state.js';
-import { initAudio } from './audio.js';
+import { initAudio, sfx, toggleMute } from './audio.js';
 import { startGame, useBoost, pause, resume, toMenu, press } from './game.js';
-import { boostBtn, pauseBtn, btnSurvive, btnClimb, resumeBtn, menuBtn, retryBtn, switchBtn } from './ui.js';
+import { boostBtn, pauseBtn, muteBtn, btnSurvive, btnClimb, resumeBtn, menuBtn, retryBtn, switchBtn } from './ui.js';
 
 // ----- keyboard -----
 addEventListener('keydown', e => {
@@ -43,14 +43,19 @@ function boostTap(e){ e.preventDefault(); e.stopPropagation(); initAudio(); useB
 boostBtn.addEventListener('touchstart', boostTap, { passive:false });
 boostBtn.addEventListener('mousedown', boostTap);
 
-function pickMode(m){ return e => { e.preventDefault(); e.stopPropagation(); initAudio(); startGame(m); }; }
+// mute toggle (works even before audio has started — flag is applied on init)
+function muteTap(e){ e.preventDefault(); e.stopPropagation(); muteBtn.textContent = toggleMute() ? '🔇' : '🔊'; }
+muteBtn.addEventListener('mousedown', muteTap);
+muteBtn.addEventListener('touchstart', muteTap, { passive:false });
+
+function pickMode(m){ return e => { e.preventDefault(); e.stopPropagation(); initAudio(); sfx('select'); startGame(m); }; }
 btnSurvive.addEventListener('mousedown',  pickMode('survive'));
 btnSurvive.addEventListener('touchstart', pickMode('survive'), { passive:false });
 btnClimb.addEventListener('mousedown',  pickMode('climb'));
 btnClimb.addEventListener('touchstart', pickMode('climb'), { passive:false });
 
 function tap(el, fn){
-  const h = e => { e.preventDefault(); e.stopPropagation(); initAudio(); fn(); };
+  const h = e => { e.preventDefault(); e.stopPropagation(); initAudio(); sfx('select'); fn(); };
   el.addEventListener('mousedown', h);
   el.addEventListener('touchstart', h, { passive:false });
 }

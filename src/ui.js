@@ -8,6 +8,7 @@ export const chargeNum  = document.getElementById('chargeNum');
 export const boostBtn   = document.getElementById('boostBtn');
 export const boostNum   = document.getElementById('boostNum');
 export const pauseBtn   = document.getElementById('pauseBtn');
+export const muteBtn    = document.getElementById('muteBtn');
 export const finalScore = document.getElementById('finalScore');
 export const bestScore  = document.getElementById('bestScore');
 export const btnSurvive = document.getElementById('btnSurvive');
