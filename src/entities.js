@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { R, WARN_DELAY, BOUNCE, STAMINA_MAX } from './config.js';
+import { R, WARN_DELAY, BOUNCE, STAMINA_MAX, HOMING_LIFE } from './config.js';
 import { S } from './state.js';
 import { clamp, rand, roundedRect, shapeMesh, circle } from './util.js';
 import { scene, camera } from './scene.js';
@@ -113,7 +113,7 @@ export function makeBullet(type){          // 'L' left→right, 'R' right→left
     ring.position.z = 0.04;
     g.add(ring);
   }
-  g.userData = { type, homing, hw:w/2, hh:h/2, vx:0, vy:0, hit:false, shell, life:9 };
+  g.userData = { type, homing, hw:w/2, hh:h/2, vx:0, vy:0, hit:false, shell, life:HOMING_LIFE };
   return g;
 }
 // Decide a spawn (type / off-screen position / velocity / entry edge) without creating it yet.

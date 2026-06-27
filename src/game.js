@@ -134,6 +134,7 @@ export function press(){
 
 // ---------- per-frame simulation ----------
 export function tick(dt){
+  const realDt = dt;               // unscaled — for real-time timers (homing lifetime)
   dt *= GAME_SPEED;                // slow the whole simulation uniformly
   S.time += dt;
 
@@ -252,7 +253,7 @@ export function tick(dt){
     // cleanup — homing Bills despawn on a timer; the rest when they leave the view
     const cy = camera.position.y;
     if (u.homing){
-      u.life -= dt;
+      u.life -= realDt;            // count down in real seconds (HOMING_LIFE)
       if (u.life <= 0 || b.position.y < cy-S.H-6 || Math.abs(b.position.x) > S.W+6){
         scene.remove(b); bullets.splice(i,1); continue;
       }
