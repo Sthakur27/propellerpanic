@@ -1,6 +1,6 @@
 import {
-  GRAV, FALL_TERMINAL, SLOW_FALL, FAST_FALL, MAX_VX, ACCEL, DRAG, BOUNCE, BOOST, POWERUP_INTERVAL,
-  GAME_SPEED, H_BASE, CLIMB_H, CLIMB_CAM_OFFSET, R,
+  GRAV, FALL_TERMINAL, FAST_FALL, FLUTTER_ACCEL, FLUTTER_VMAX, MAX_VX, ACCEL, DRAG, BOUNCE, BOOST,
+  POWERUP_INTERVAL, GAME_SPEED, H_BASE, CLIMB_H, CLIMB_CAM_OFFSET, R,
   STAMINA_MAX, STAMINA_DRAIN, STAMINA_REGEN,
 } from './config.js';
 import { S, keys } from './state.js';
@@ -16,7 +16,7 @@ import {
 } from './entities.js';
 import {
   scoreEl, startEl, overEl, pauseEl, chargesEl, chargeNum, boostBtn, boostNum, pauseBtn,
-  finalScore, bestScore, staminaEl, staminaFill,
+  finalScore, bestScore, staminaEl, staminaFill, pad,
 } from './ui.js';
 
 export function updateCharges(){
@@ -51,7 +51,7 @@ export function startGame(m){
     S.nextPlatformY = player.position.y + 11;
   }
   S.vy = FALL_TERMINAL; S.vx = 0; S.prevY = player.position.y; S.time = 0;
-  S.boostCharges = 0; S.rescueArmed = true; S.stamina = STAMINA_MAX;
+  S.boostCharges = 0; S.rescueArmed = true; S.stamina = STAMINA_MAX; S.flutterLocked = false;
   scoreEl.textContent = S.mode === 'climb' ? '0m' : '0';
   updateCharges();
   startEl.classList.add('hidden');
@@ -62,6 +62,7 @@ export function startGame(m){
   pauseBtn.style.display = 'flex';
   staminaEl.style.display = 'block';
   staminaFill.style.width = '100%'; staminaEl.classList.remove('low');
+  pad.classList.add('on');         // show the touch gamepad (no-op on non-touch)
   resumeMusic();                   // in case we're restarting from a paused state
   S.phase = 'playing';
   // give the player something to bounce on right away
@@ -85,6 +86,7 @@ export function die(){
   boostBtn.style.display = 'none';
   pauseBtn.style.display = 'none';
   staminaEl.style.display = 'none';
+  pad.classList.remove('on');
 }
 
 export function useBoost(){
@@ -123,6 +125,7 @@ export function toMenu(){
   chargesEl.style.display = 'none';
   boostBtn.style.display = 'none';
   staminaEl.style.display = 'none';
+  pad.classList.remove('on');
   S.phase = 'start';
 }
 
@@ -160,7 +163,10 @@ export function tick(dt){
     if (camTarget > camera.position.y) camera.position.y = camTarget;
     while (S.nextPlatformY < camera.position.y + S.H + 6){ makePlatform(S.nextPlatformY); S.nextPlatformY += rand(8, 13); }
     for (let i = platforms.length-1; i >= 0; i--){
-      if (platforms[i].userData.yc < camera.position.y - S.H - 4){ scene.remove(platforms[i]); platforms.splice(i,1); }
+      const pf = platforms[i];
+      if (pf.userData.yc < camera.position.y - S.H - 4){ scene.remove(pf); platforms.splice(i,1); continue; }
+      const mv = pf.userData.move;                       // slide the moving ones
+      if (mv){ mv.t += dt * mv.speed; pf.position.x = mv.baseX + Math.sin(mv.t) * mv.amp; }
     }
   }
 
@@ -177,17 +183,27 @@ export function tick(dt){
   S.powerupTimer += dt;
   if (S.powerupTimer >= POWERUP_INTERVAL){ S.powerupTimer = 0; spawnPowerup(); }
 
-  // slow-fall costs stamina (fast-fall is free); regens over time, refills on a bounce
-  const slowing = keys.slow && S.stamina > 0;
-  S.stamina = slowing
-    ? Math.max(0, S.stamina - STAMINA_DRAIN * dt)
-    : Math.min(STAMINA_MAX, S.stamina + STAMINA_REGEN * dt);
+  // flutter (hold W) costs stamina; once exhausted it locks until fully recharged (or a bounce)
+  const fluttering = keys.slow && S.stamina > 0 && !S.flutterLocked;
+  if (fluttering){
+    S.stamina = Math.max(0, S.stamina - STAMINA_DRAIN * dt);
+    if (S.stamina <= 0) S.flutterLocked = true;          // out of breath
+  } else {
+    S.stamina = Math.min(STAMINA_MAX, S.stamina + STAMINA_REGEN * dt);
+    if (S.stamina >= STAMINA_MAX) S.flutterLocked = false;
+  }
   staminaFill.style.width = (S.stamina / STAMINA_MAX * 100) + '%';
-  staminaEl.classList.toggle('low', S.stamina < STAMINA_MAX * 0.25);
+  staminaEl.classList.toggle('low', S.flutterLocked || S.stamina < STAMINA_MAX * 0.25);
 
-  // player physics — gravity (doubled while fast-falling), capped to a glide
+  // player physics — gravity (doubled while fast-falling)
   S.vy -= GRAV * (keys.fast ? 2 : 1) * dt;
-  const termFall = slowing ? SLOW_FALL : (keys.fast ? FAST_FALL : FALL_TERMINAL);
+  // flutter lift: ramp up toward a target rise speed that fades with stamina (Yoshi struggle).
+  // Only lifts when you're below the target, so it never cuts a fresh bounce.
+  if (fluttering){
+    const target = FLUTTER_VMAX * (S.stamina / STAMINA_MAX);
+    if (S.vy < target) S.vy = Math.min(S.vy + FLUTTER_ACCEL * dt, target);
+  }
+  const termFall = keys.fast ? FAST_FALL : FALL_TERMINAL;
   if (S.vy < termFall) S.vy = termFall;
   S.prevY = player.position.y;
   player.position.y += S.vy * dt;
@@ -212,11 +228,11 @@ export function tick(dt){
   // survive has a ceiling; climb is open upward
   if (S.mode === 'survive' && player.position.y > S.H-R){ player.position.y = S.H-R; if (S.vy>0) S.vy = 0; }
 
-  // propeller always spins; faster while shooting upward or braking a fall
-  prop.rotation.z -= (13 + Math.max(0, S.vy) * 1.1 + (slowing ? 16 : 0)) * dt;
+  // propeller always spins; faster while shooting upward or fluttering
+  prop.rotation.z -= (13 + Math.max(0, S.vy) * 1.1 + (fluttering ? 16 : 0)) * dt;
 
-  // expression: angry/red while diving, sweaty while braking
-  setPlayerMood(keys.fast, slowing, dt);
+  // expression: angry/red while diving, sweaty while fluttering (struggling)
+  setPlayerMood(keys.fast, fluttering, dt);
 
   if (S.mode === 'survive'){
     // rescue: if you sink past the screen midpoint, drop a Bill into the bottom band
@@ -242,10 +258,10 @@ export function tick(dt){
     b.position.x += u.vx*dt;
     b.position.y += u.vy*dt;
 
-    if (u.hit){                       // defeated: shrink & spin out
+    if (u.hit){                       // defeated: shrink, spin, and sink downward
       b.scale.multiplyScalar(1 - 3*dt);
       b.rotation.z += 12*dt;
-      b.position.y += 4*dt;
+      b.position.y -= 7*dt;
       if (b.scale.x < 0.06){ scene.remove(b); bullets.splice(i,1); }
       continue;
     }
@@ -257,6 +273,7 @@ export function tick(dt){
       if (u.life <= 0 || b.position.y < cy-S.H-6 || Math.abs(b.position.x) > S.W+6){
         scene.remove(b); bullets.splice(i,1); continue;
       }
+      if (u.life < 2) u.shell.material.color.set(Math.sin(u.life * 25) > 0 ? 0xffcc33 : 0x9e1f30);  // flash before despawn
     } else if (b.position.x < -S.W-4 || b.position.x > S.W+4 || b.position.y > cy+S.H+4 || b.position.y < cy-S.H-8){
       scene.remove(b); bullets.splice(i,1); continue;
     }
@@ -267,10 +284,14 @@ export function tick(dt){
     const oy = Math.abs(py - b.position.y) < (u.hh + R*0.75);
     if (ox && oy){
       const top = b.position.y + u.hh;
-      if (S.vy < 0 && (S.prevY - R) >= top - 0.5){     // landed on the head
+      // stomp if you're descending RELATIVE to the Bill and on its head (above its center now,
+      // or your feet were above its top last frame — covers fast dives and rising Bills)
+      const relDown = S.vy < (u.vy || 0);
+      const onHead  = py > b.position.y || (S.prevY - R) >= top - 0.6;
+      if (relDown && onHead){
         const lowThird = player.position.y < camera.position.y - S.H / 3;   // bottom third of view
         S.vy = BOUNCE * (lowThird ? 1.25 : 1);         // stronger save when you're low
-        S.stamina = STAMINA_MAX;                       // bounce refills slow-fall stamina
+        S.stamina = STAMINA_MAX; S.flutterLocked = false;   // bounce refills + unlocks flutter
         u.hit = true;
         u.shell.material.color.set(u.homing ? 0xc98a92 : 0x6b7287);
         burst(px, top, 0xfff176, 14);

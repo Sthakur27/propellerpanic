@@ -16,18 +16,18 @@ Two modes:
 
 | Action | Keyboard | Touch |
 | --- | --- | --- |
-| Steer left / right | `A` `D` (or `←` `→`) | hold the left / right half of the screen |
-| Fall slower | hold `W` / `↑` / `Space` | — |
-| Fall faster | hold `S` / `↓` | — |
+| Steer left / right | `A` `D` (or `←` `→`) | hold `◀` / `▶` |
+| Flutter up | hold `W` / `↑` / `Space` | hold `▲` |
+| Fall faster | hold `S` / `↓` | hold `▼` |
 | Use boost charge | `E` | tap the ⚡ button |
 | Pause / resume | `P` / `Esc` | tap the ⏸ button |
 | Music on / off | tap 🎵 | tap 🎵 |
 | SFX on / off | tap 🔊 | tap 🔊 |
 | Start / retry | `Space` (or `R` on game over) | tap |
 
-You glide down automatically — your only way up is **bouncing off a Bill's head**. Hold the
-slow-fall key to brake your descent and line up landings — this drains the **stamina bar** (under
-the score), which regenerates over time and refills instantly on every bounce. Fast-fall is free.
+You glide down automatically — your main way up is **bouncing off a Bill's head**. Hold `W` to
+**flutter** for a little extra lift (Yoshi-style — it peters out as the **stamina bar** under the
+score drains), which regenerates over time and refills instantly on every bounce. Fast-fall is free.
 Collect green **⚡ power-ups** to bank a one-time boost charge (fire it with `E` / the ⚡ button)
 for a big launch.
 Landing a bounce while low in the screen gives a stronger "save" bounce. Watch for **red homing

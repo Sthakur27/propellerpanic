@@ -85,8 +85,8 @@ export const bullets = [];
 export function makeBullet(type){          // 'L' left→right, 'R' right→left, 'U' bottom→up, 'HOMING' chases
   const homing = type === 'HOMING';
   const horiz  = (type === 'L' || type === 'R');
-  const w = homing ? 1.9 : (horiz ? 2.5 : 1.3);
-  const h = homing ? 1.9 : (horiz ? 1.3 : 2.5);
+  const w = homing ? 1.7 : (horiz ? 2.5 : 1.3);
+  const h = homing ? 1.7 : (horiz ? 1.3 : 2.5);
   const g = new THREE.Group();
   const shell = shapeMesh(roundedRect(w,h,Math.min(w,h)/2), homing ? 0x9e1f30 : 0x2a2d3a);
   g.add(shell);
@@ -213,22 +213,45 @@ export function clearPowerups(){ powerups.forEach(p => scene.remove(p)); powerup
 export const platforms = [];
 export function makePlatform(y){
   const g = new THREE.Group();
-  const gap = clamp(4.4 - S.score*0.005, 2.9, 4.4);          // narrows a little as you climb
-  const gapCenter = rand(-S.W + gap/2 + 1.2, S.W - gap/2 - 1.2);
-  const th = 0.85, ext = S.W + 2;
+  const th = 0.85;
   const segs = [];
-  const mkBar = (x0, x1) => {
+  let barC = 0x8a5a3c, capC = 0xb37c52;                      // default wood; moving ones recolor
+  const addBar = (x0, x1) => {
     if (x1 - x0 < 0.3) return;
     const w = x1 - x0, cx = (x0 + x1) / 2;
-    const bar = shapeMesh(roundedRect(w, th, 0.2), 0x8a5a3c);  bar.position.set(cx, 0, 0);
-    const cap = shapeMesh(roundedRect(w, 0.24, 0.1), 0xb37c52); cap.position.set(cx, th/2 - 0.09, 0.01);
+    const bar = shapeMesh(roundedRect(w, th, 0.2), barC);  bar.position.set(cx, 0, 0);
+    const cap = shapeMesh(roundedRect(w, 0.24, 0.1), capC); cap.position.set(cx, th/2 - 0.09, 0.01);
     g.add(bar, cap);
-    segs.push({ x0, x1 });
+    segs.push({ x0, x1 });                                    // local coords; collision adds group.x
   };
-  mkBar(-ext, gapCenter - gap/2);
-  mkBar(gapCenter + gap/2, ext);
-  g.position.set(0, y, 0.6);
-  g.userData = { segs, yc:y, hh:th/2 };
+
+  const r = Math.random();
+  let move = null;
+  if (r < 0.34){
+    // (a) full-width wall with a gap to thread through
+    const gap = clamp(4.4 - S.score*0.005, 2.9, 4.4);
+    const gapCenter = rand(-S.W + gap/2 + 1.2, S.W - gap/2 - 1.2);
+    const ext = S.W + 2;
+    addBar(-ext, gapCenter - gap/2);
+    addBar(gapCenter + gap/2, ext);
+  } else if (r < 0.67){
+    // (b) a single small ledge spanning 10–30% of the screen width
+    const w = rand(0.2, 0.6) * S.W;                          // screen width = 2·S.W → 10–30%
+    const cx = rand(-S.W + w/2 + 0.5, S.W - w/2 - 0.5);
+    addBar(cx - w/2, cx + w/2);
+  } else {
+    // (c) a small platform that slides side to side
+    barC = 0x4a6f9a; capC = 0x7fa6cf;
+    const w = rand(0.22, 0.42) * S.W;
+    addBar(-w/2, w/2);                                       // centered; the group oscillates in x
+    const maxReach = Math.max(0, S.W - w/2 - 0.5);
+    const amp = Math.min(rand(S.W*0.3, S.W*0.7), maxReach);
+    const baseX = rand(-(maxReach - amp), maxReach - amp);
+    move = { t: rand(0, 6.28), speed: rand(0.6, 1.1), amp, baseX };
+  }
+
+  g.position.set(move ? move.baseX : 0, y, 0.6);
+  g.userData = { segs, yc:y, hh:th/2, move };
   platforms.push(g); scene.add(g);
   return g;
 }
@@ -237,8 +260,9 @@ export function collidePlatforms(){
   for (const pf of platforms){
     const { yc, hh, segs } = pf.userData;
     if (Math.abs(player.position.y - yc) > hh + R + 0.2) continue;   // vertical reject
+    const ox = pf.position.x;                                        // 0 for static, slides for moving
     for (const s of segs){
-      const sx0 = s.x0 - R, sx1 = s.x1 + R, sy0 = yc - hh - R, sy1 = yc + hh + R;
+      const sx0 = s.x0 + ox - R, sx1 = s.x1 + ox + R, sy0 = yc - hh - R, sy1 = yc + hh + R;
       const px = player.position.x, py = player.position.y;
       if (px > sx0 && px < sx1 && py > sy0 && py < sy1){
         const pushL = px - sx0, pushR = sx1 - px, pushD = py - sy0, pushU = sy1 - py;
@@ -249,7 +273,7 @@ export function collidePlatforms(){
           if (S.vy < 0){
             const lowThird = player.position.y < camera.position.y - S.H / 3;
             S.vy = BOUNCE * (lowThird ? 1.25 : 1);
-            S.stamina = STAMINA_MAX;                  // platform bounce refills stamina too
+            S.stamina = STAMINA_MAX; S.flutterLocked = false;   // platform bounce refills + unlocks
             burst(player.position.x, player.position.y - R, 0xffe08a, 12);
             sfx('bounce');
           }

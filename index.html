@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 <title>Propeller Panic</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚁</text></svg>" />
 <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -16,11 +17,18 @@
   <button id="sfxBtn" aria-label="Toggle sound effects">🔊</button>
   <button id="pauseBtn" aria-label="Pause">⏸</button>
 
+  <div id="pad">
+    <button id="padLeft"  class="padBtn" aria-label="Steer left">◀</button>
+    <button id="padRight" class="padBtn" aria-label="Steer right">▶</button>
+    <button id="padUp"    class="padBtn" aria-label="Flutter up">▲</button>
+    <button id="padDown"  class="padBtn" aria-label="Dive">▼</button>
+  </div>
+
   <div id="start" class="overlay">
     <div class="card">
       <h1>🚁 Propeller Panic</h1>
       <div class="sub"><b>Land on a Bill's head</b> to bounce. Steer <kbd>A</kbd> <kbd>D</kbd>,
-        hold <kbd>W</kbd> to fall slower or <kbd>S</kbd> to fall faster, grab
+        hold <kbd>W</kbd> to flutter up or <kbd>S</kbd> to fall faster, grab
         <b style="color:#7bffa9">⚡ power-ups</b> then press <kbd>E</kbd> to boost.</div>
       <div class="modeBtns">
         <button id="btnSurvive" class="modeBtn">

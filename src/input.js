@@ -1,7 +1,9 @@
 import { S, keys } from './state.js';
 import { initAudio, sfx, toggleMusic, toggleSfx } from './audio.js';
+import { gameEl } from './scene.js';
 import { startGame, useBoost, pause, resume, toMenu, press } from './game.js';
-import { boostBtn, pauseBtn, musicBtn, sfxBtn, btnSurvive, btnClimb, resumeBtn, restartBtn, menuBtn, retryBtn, switchBtn } from './ui.js';
+import { boostBtn, pauseBtn, musicBtn, sfxBtn, padLeft, padRight, padUp, padDown,
+         btnSurvive, btnClimb, resumeBtn, restartBtn, menuBtn, retryBtn, switchBtn } from './ui.js';
 
 // ----- keyboard -----
 addEventListener('keydown', e => {
@@ -29,18 +31,33 @@ addEventListener('keyup', e => {
   if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.fast = false;
 });
 
-// ----- touch: hold left / right half of the screen to steer -----
-function touchUpdate(touches){
-  keys.left = keys.right = false;
-  for (const t of touches){
-    if (t.clientX < innerWidth*0.5) keys.left = true;
-    else keys.right = true;
-  }
+// ----- tapping the screen retries on the game-over screen (steering is on the pad buttons) -----
+addEventListener('touchstart', () => { if (S.phase === 'over') press(); }, { passive:true });
+addEventListener('mousedown',  () => { if (S.phase === 'over') press(); });
+
+// ----- on-screen gamepad: hold buttons set the same key flags as the keyboard -----
+function holdButton(el, key){
+  const set = on => e => { e.preventDefault(); e.stopPropagation(); if (on) initAudio(); keys[key] = on; };
+  el.addEventListener('touchstart', set(true),  { passive:false });
+  el.addEventListener('touchend',   set(false), { passive:false });
+  el.addEventListener('touchcancel',set(false), { passive:false });
+  el.addEventListener('mousedown',  set(true));
+  el.addEventListener('mouseup',    set(false));
+  el.addEventListener('mouseleave', set(false));
 }
-addEventListener('touchstart', e => { e.preventDefault(); if (S.phase === 'over') press(); touchUpdate(e.touches); }, { passive:false });
-addEventListener('touchmove',  e => { e.preventDefault(); touchUpdate(e.touches); }, { passive:false });
-addEventListener('touchend',   e => { touchUpdate(e.touches); }, { passive:false });
-addEventListener('mousedown',  e => { if (S.phase === 'over') press(); });
+holdButton(padLeft,  'left');
+holdButton(padRight, 'right');
+holdButton(padUp,    'slow');   // flutter
+holdButton(padDown,  'fast');   // dive
+
+// reveal the gamepad on touch devices. Check several signals at load, AND flip it on the
+// first touch anywhere — capture phase, so it runs even though buttons stopPropagation
+// (this also covers Chrome's device-mode being toggled on after load).
+function enableTouch(){ gameEl.classList.add('touch'); }
+if (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0 || 'ontouchstart' in window){
+  enableTouch();
+}
+addEventListener('touchstart', enableTouch, { capture:true, passive:true });
 
 // ----- buttons (stopPropagation so they don't also hit the window handlers) -----
 function boostTap(e){ e.preventDefault(); e.stopPropagation(); initAudio(); useBoost(); }
