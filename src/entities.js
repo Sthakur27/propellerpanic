@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { R, WARN_DELAY, BOUNCE } from './config.js';
+import { R, WARN_DELAY, BOUNCE, STAMINA_MAX } from './config.js';
 import { S } from './state.js';
 import { clamp, rand, roundedRect, shapeMesh, circle } from './util.js';
 import { scene, camera } from './scene.js';
@@ -28,26 +28,57 @@ scene.add(dangerBar);
 // ---------- player (yellow body + eyes + spinning propeller) ----------
 export const player = new THREE.Group();
 export const prop = new THREE.Group();
-{
-  const body  = circle(R, 0xffd23f);
-  const belly = circle(R*0.62, 0xfff0b8); belly.position.set(0,-0.05,0.01);
-  player.add(body, belly);
-  const eye = (x) => {
-    const g = new THREE.Group();
-    const wht = circle(0.17, 0xffffff);
-    const pup = circle(0.085, 0x232634); pup.position.set(0.04,-0.01,0.01);
-    g.add(wht, pup); g.position.set(x, 0.16, 0.02); return g;
-  };
-  player.add(eye(-0.20), eye(0.20));
+const playerBody  = circle(R, 0xffd23f);
+const playerBelly = circle(R*0.62, 0xfff0b8); playerBelly.position.set(0,-0.05,0.01);
+player.add(playerBody, playerBelly);
+const eye = (x) => {
+  const g = new THREE.Group();
+  const wht = circle(0.17, 0xffffff);
+  const pup = circle(0.085, 0x232634); pup.position.set(0.04,-0.01,0.01);
+  g.add(wht, pup); g.position.set(x, 0.16, 0.02); return g;
+};
+player.add(eye(-0.20), eye(0.20));
 
-  const blade = shapeMesh(roundedRect(1.7,0.22,0.11), 0xff5a5a);
-  const hub   = circle(0.16, 0x444a5c); hub.position.z = 0.01;
-  prop.add(blade, hub);
-  prop.position.set(0, R+0.18, 0.05);
-  player.add(prop);
-}
+// angry eyebrows ("\  /"), shown while fall-faster
+const brows = new THREE.Group();
+const brow = (x, ang) => {
+  const m = shapeMesh(roundedRect(0.34, 0.085, 0.04), 0x2a2030);
+  m.position.set(x, 0.39, 0.05); m.rotation.z = ang; return m;
+};
+brows.add(brow(-0.22, -0.45), brow(0.22, 0.45));
+brows.visible = false;
+player.add(brows);
+
+// cute sweat beads, shown while fall-slower (struggling) — outlined so they read on the sky
+const sweat = new THREE.Group();
+const bead = (x, y, r) => {
+  const g = new THREE.Group();
+  const edge  = circle(r, 0x16456f);                                   // dark outline
+  const fill  = circle(r*0.72, 0x9fe8ff); fill.position.z = 0.01;
+  const shine = circle(r*0.28, 0xffffff); shine.position.set(-r*0.22, r*0.22, 0.02);
+  g.add(edge, fill, shine); g.position.set(x, y, 0.06); return g;
+};
+sweat.add(bead(0.54, 0.42, 0.15), bead(0.7, 0.16, 0.1));
+sweat.visible = false;
+player.add(sweat);
+
+const blade = shapeMesh(roundedRect(1.7,0.22,0.11), 0xff5a5a);
+const hub   = circle(0.16, 0x444a5c); hub.position.z = 0.01;
+prop.add(blade, hub);
+prop.position.set(0, R+0.18, 0.05);
+player.add(prop);
+
 player.position.set(0, 5, 1);
 scene.add(player);
+
+// Expression driven by the game loop: fast-fall → angry red + brows, slow-fall → sweaty.
+let sweatT = 0;
+export function setPlayerMood(fast, slow, dt){
+  playerBody.material.color.set(fast ? 0xff5a5a : 0xffd23f);
+  brows.visible = !!fast;
+  sweat.visible = !!slow;
+  if (slow){ sweatT += (dt || 0) * 6; sweat.position.y = Math.sin(sweatT) * 0.05; }  // little jiggle
+}
 
 // ---------- Bullet Bills ----------
 export const bullets = [];
@@ -218,6 +249,7 @@ export function collidePlatforms(){
           if (S.vy < 0){
             const lowThird = player.position.y < camera.position.y - S.H / 3;
             S.vy = BOUNCE * (lowThird ? 1.25 : 1);
+            S.stamina = STAMINA_MAX;                  // platform bounce refills stamina too
             burst(player.position.x, player.position.y - R, 0xffe08a, 12);
             sfx('bounce');
           }

@@ -11,6 +11,7 @@ export const S = {
   vy: 0, vx: 0, prevY: 0, time: 0,
   spawnTimer: 0, powerupTimer: 0,
   boostCharges: 0,
+  stamina: 1,              // slow-fall stamina (0..STAMINA_MAX)
   rescueArmed: true,
   homingChance: 0,         // set per-frame; read by resolveSpawn
   startY: 0, maxClimbY: 0, nextPlatformY: 0,   // climb-mode tracking

@@ -1,13 +1,14 @@
 import {
   GRAV, FALL_TERMINAL, SLOW_FALL, FAST_FALL, MAX_VX, ACCEL, DRAG, BOUNCE, BOOST, POWERUP_INTERVAL,
   GAME_SPEED, H_BASE, CLIMB_H, CLIMB_CAM_OFFSET, R,
+  STAMINA_MAX, STAMINA_DRAIN, STAMINA_REGEN,
 } from './config.js';
 import { S, keys } from './state.js';
 import { clamp, rand } from './util.js';
 import { scene, camera, updateCamera, targetZoom } from './scene.js';
 import { initAudio, sfx, pauseMusic, resumeMusic } from './audio.js';
 import {
-  player, prop, particles,
+  player, prop, particles, setPlayerMood,
   bullets, warnings, realizeSpawn, scheduleSpawn, spawnRescue, clearBullets, clearWarnings,
   powerups, spawnPowerup, clearPowerups,
   platforms, makePlatform, clearPlatforms, collidePlatforms,
@@ -15,7 +16,7 @@ import {
 } from './entities.js';
 import {
   scoreEl, startEl, overEl, pauseEl, chargesEl, chargeNum, boostBtn, boostNum, pauseBtn,
-  finalScore, bestScore,
+  finalScore, bestScore, staminaEl, staminaFill,
 } from './ui.js';
 
 export function updateCharges(){
@@ -39,6 +40,7 @@ export function startGame(m){
   S.score = 0; S.homingChance = 0;
   S.H = (S.mode === 'climb') ? CLIMB_H : H_BASE; updateCamera();
   player.rotation.z = 0;
+  setPlayerMood(false, false, 0);
   if (S.mode === 'survive'){
     camera.position.y = 0;
     player.position.set(0, S.H * 0.72, 1);
@@ -49,7 +51,7 @@ export function startGame(m){
     S.nextPlatformY = player.position.y + 11;
   }
   S.vy = FALL_TERMINAL; S.vx = 0; S.prevY = player.position.y; S.time = 0;
-  S.boostCharges = 0; S.rescueArmed = true;
+  S.boostCharges = 0; S.rescueArmed = true; S.stamina = STAMINA_MAX;
   scoreEl.textContent = S.mode === 'climb' ? '0m' : '0';
   updateCharges();
   startEl.classList.add('hidden');
@@ -58,6 +60,8 @@ export function startGame(m){
   chargesEl.style.display = 'block';
   boostBtn.style.display = 'flex';
   pauseBtn.style.display = 'flex';
+  staminaEl.style.display = 'block';
+  staminaFill.style.width = '100%'; staminaEl.classList.remove('low');
   resumeMusic();                   // in case we're restarting from a paused state
   S.phase = 'playing';
   // give the player something to bounce on right away
@@ -80,6 +84,7 @@ export function die(){
   chargesEl.style.display = 'none';
   boostBtn.style.display = 'none';
   pauseBtn.style.display = 'none';
+  staminaEl.style.display = 'none';
 }
 
 export function useBoost(){
@@ -110,12 +115,14 @@ export function toMenu(){
   particles.forEach(p => scene.remove(p.m)); particles.length = 0;
   S.H = H_BASE; camera.position.y = 0; updateCamera();
   player.position.set(0, S.H*0.72, 1); player.rotation.z = 0;
+  setPlayerMood(false, false, 0);
   pauseEl.classList.add('hidden');
   overEl.classList.add('hidden');
   startEl.classList.remove('hidden');
   pauseBtn.style.display = 'none';
   chargesEl.style.display = 'none';
   boostBtn.style.display = 'none';
+  staminaEl.style.display = 'none';
   S.phase = 'start';
 }
 
@@ -169,9 +176,17 @@ export function tick(dt){
   S.powerupTimer += dt;
   if (S.powerupTimer >= POWERUP_INTERVAL){ S.powerupTimer = 0; spawnPowerup(); }
 
+  // slow-fall costs stamina (fast-fall is free); regens over time, refills on a bounce
+  const slowing = keys.slow && S.stamina > 0;
+  S.stamina = slowing
+    ? Math.max(0, S.stamina - STAMINA_DRAIN * dt)
+    : Math.min(STAMINA_MAX, S.stamina + STAMINA_REGEN * dt);
+  staminaFill.style.width = (S.stamina / STAMINA_MAX * 100) + '%';
+  staminaEl.classList.toggle('low', S.stamina < STAMINA_MAX * 0.25);
+
   // player physics — gravity (doubled while fast-falling), capped to a glide
   S.vy -= GRAV * (keys.fast ? 2 : 1) * dt;
-  const termFall = keys.slow ? SLOW_FALL : (keys.fast ? FAST_FALL : FALL_TERMINAL);
+  const termFall = slowing ? SLOW_FALL : (keys.fast ? FAST_FALL : FALL_TERMINAL);
   if (S.vy < termFall) S.vy = termFall;
   S.prevY = player.position.y;
   player.position.y += S.vy * dt;
@@ -197,7 +212,10 @@ export function tick(dt){
   if (S.mode === 'survive' && player.position.y > S.H-R){ player.position.y = S.H-R; if (S.vy>0) S.vy = 0; }
 
   // propeller always spins; faster while shooting upward or braking a fall
-  prop.rotation.z -= (13 + Math.max(0, S.vy) * 1.1 + (keys.slow ? 16 : 0)) * dt;
+  prop.rotation.z -= (13 + Math.max(0, S.vy) * 1.1 + (slowing ? 16 : 0)) * dt;
+
+  // expression: angry/red while diving, sweaty while braking
+  setPlayerMood(keys.fast, slowing, dt);
 
   if (S.mode === 'survive'){
     // rescue: if you sink past the screen midpoint, drop a Bill into the bottom band
@@ -251,6 +269,7 @@ export function tick(dt){
       if (S.vy < 0 && (S.prevY - R) >= top - 0.5){     // landed on the head
         const lowThird = player.position.y < camera.position.y - S.H / 3;   // bottom third of view
         S.vy = BOUNCE * (lowThird ? 1.25 : 1);         // stronger save when you're low
+        S.stamina = STAMINA_MAX;                       // bounce refills slow-fall stamina
         u.hit = true;
         u.shell.material.color.set(u.homing ? 0xc98a92 : 0x6b7287);
         burst(px, top, 0xfff176, 14);

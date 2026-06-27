@@ -1,5 +1,7 @@
 // Cached DOM references (the module script runs after the markup, so these resolve).
 export const scoreEl    = document.getElementById('score');
+export const staminaEl   = document.getElementById('stamina');
+export const staminaFill = document.getElementById('staminaFill');
 export const startEl    = document.getElementById('start');
 export const overEl     = document.getElementById('over');
 export const pauseEl    = document.getElementById('pause');

@@ -26,8 +26,10 @@ Two modes:
 | Start / retry | `Space` (or `R` on game over) | tap |
 
 You glide down automatically — your only way up is **bouncing off a Bill's head**. Hold the
-slow-fall key to brake your descent and line up landings. Collect green **⚡ power-ups** to bank a
-one-time boost charge (fire it with `E` / the ⚡ button) for a big launch.
+slow-fall key to brake your descent and line up landings — this drains the **stamina bar** (under
+the score), which regenerates over time and refills instantly on every bounce. Fast-fall is free.
+Collect green **⚡ power-ups** to bank a one-time boost charge (fire it with `E` / the ⚡ button)
+for a big launch.
 Landing a bounce while low in the screen gives a stronger "save" bounce. Watch for **red homing
 Bills** that track you, and the **red strip at the bottom edge** — fall into it and it's over.
 
